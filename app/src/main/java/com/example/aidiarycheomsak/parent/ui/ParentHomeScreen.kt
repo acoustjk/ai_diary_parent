@@ -30,6 +30,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.messaging.FirebaseMessaging
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -264,6 +265,7 @@ fun ParentHomeScreen(
                                                             reviewerName = cleanNickname
                                                             selectedChildId = childId
                                                             isPairingInProgress = false
+                                                            FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
                                                             Toast.makeText(context, "${childName} 어린이 연결 성공! 🎉", Toast.LENGTH_SHORT).show()
                                                         }
                                                 }
@@ -516,6 +518,7 @@ fun ParentHomeScreen(
                                                     showPairingDialog = false
                                                     pairingCodeInput = ""
                                                     isPairingInProgress = false
+                                                    FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
                                                     Toast.makeText(context, "${childName} 어린이 추가 연결 성공! 🎉", Toast.LENGTH_SHORT).show()
                                                 }
                                         }
