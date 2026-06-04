@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -203,6 +204,7 @@ fun ParentHomeScreen(
                             onValueChange = { pairingNicknameInput = it },
                             label = { Text("보호자 호칭 (예: 엄마, 아빠, 선생님)") },
                             singleLine = true,
+                            textStyle = TextStyle(color = Color.Black),
                             modifier = Modifier.fillMaxWidth()
                         )
 
@@ -211,6 +213,7 @@ fun ParentHomeScreen(
                             onValueChange = { pairingCodeInput = it },
                             label = { Text("아이 앱의 6자리 페어링 코드") },
                             singleLine = true,
+                            textStyle = TextStyle(color = Color.Black),
                             modifier = Modifier.fillMaxWidth()
                         )
 
@@ -470,6 +473,7 @@ fun ParentHomeScreen(
                         value = pairingCodeInput,
                         onValueChange = { pairingCodeInput = it },
                         placeholder = { Text("6자리 코드 입력") },
+                        textStyle = TextStyle(color = Color.Black),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
