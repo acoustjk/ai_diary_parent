@@ -336,10 +336,15 @@ fun ScoreChangeItem(
             color = Color(0xFF3182CE)
         )
         Spacer(modifier = Modifier.height(4.dp))
-        val diff = after - before
-        val diffText = if (diff > 0) " (+${diff}) 🎉" else if (diff < 0) " (${diff})" else " (동일)"
+        val displayText = if (after == 0) {
+            "$before"
+        } else {
+            val diff = after - before
+            val diffText = if (diff > 0) " (+${diff}) 🎉" else if (diff < 0) " (${diff})" else " (동일)"
+            "$before ➡️ $after$diffText"
+        }
         Text(
-            text = "$before ➡️ $after$diffText",
+            text = displayText,
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF2D3748)

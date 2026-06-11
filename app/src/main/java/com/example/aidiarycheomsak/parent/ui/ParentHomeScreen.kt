@@ -424,14 +424,24 @@ fun ParentHomeScreen(
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
                                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                            val spellingText = if (report.secondSpellingScore == 0) {
+                                                "맞춤법: ${report.firstSpellingScore}"
+                                            } else {
+                                                "맞춤법: ${report.firstSpellingScore} ➡️ ${report.secondSpellingScore}"
+                                            }
+                                            val expressionText = if (report.secondExpressionScore == 0) {
+                                                "표현력: ${report.firstExpressionScore}"
+                                            } else {
+                                                "표현력: ${report.firstExpressionScore} ➡️ ${report.secondExpressionScore}"
+                                            }
                                             Text(
-                                                text = "맞춤법: ${report.firstSpellingScore} ➡️ ${report.secondSpellingScore}",
+                                                text = spellingText,
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.SemiBold,
                                                 color = Color(0xFF3182CE)
                                             )
                                             Text(
-                                                text = "표현력: ${report.firstExpressionScore} ➡️ ${report.secondExpressionScore}",
+                                                text = expressionText,
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.SemiBold,
                                                 color = Color(0xFF48BB78)
