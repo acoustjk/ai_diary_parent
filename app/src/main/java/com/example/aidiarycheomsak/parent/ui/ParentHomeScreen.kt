@@ -1,6 +1,7 @@
 package com.example.aidiarycheomsak.parent.ui
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -353,6 +354,74 @@ fun ParentHomeScreen(
                                     selectedLabelColor = Color(0xFF2B6CB0)
                                 )
                             )
+                        }
+                    }
+                }
+
+                // 🪙 자녀 크레딧 현황 및 충전 카드
+                if (selectedChildId.isNotEmpty()) {
+                    val selectedChild = childrenList.find { (it["childId"] as? String) == selectedChildId }
+                    if (selectedChild != null) {
+                        val credits = (selectedChild["credits"] as? Long) ?: 3L
+                        val totalCredits = (selectedChild["totalCreditsGranted"] as? Long) ?: 3L
+                        val childName = (selectedChild["childName"] as? String) ?: "아이"
+                        
+                        Card(
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFDF5)),
+                            border = BorderStroke(1.dp, Color(0xFFFBD38D)),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(text = "🪙", fontSize = 22.sp)
+                                    Column {
+                                        Text(
+                                            text = "${childName}의 남은 크레딧: ${credits}개",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp,
+                                            color = Color(0xFFB7791F)
+                                        )
+                                        Text(
+                                            text = "사용 가능 크레딧: ${credits} / ${totalCredits}개",
+                                            fontSize = 11.sp,
+                                            color = Color(0xFF744210)
+                                        )
+                                    }
+                                }
+                                
+                                Button(
+                                    onClick = {
+                                        db.collection("children").document(selectedChildId)
+                                            .update(
+                                                "credits", FieldValue.increment(10),
+                                                "totalCreditsGranted", FieldValue.increment(10)
+                                            )
+                                            .addOnSuccessListener {
+                                                Toast.makeText(context, "${childName}의 크레딧이 10개 충전되었습니다! 🪙", Toast.LENGTH_SHORT).show()
+                                            }
+                                            .addOnFailureListener { e ->
+                                                Toast.makeText(context, "충전 실패: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                            }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD69E2E)),
+                                    shape = RoundedCornerShape(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text("크레딧 충전 (+10)", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                                }
+                            }
                         }
                     }
                 }
