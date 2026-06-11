@@ -253,22 +253,52 @@ fun ParentHomeScreen(
                                             db.collection("children").document(childId)
                                                 .update("pairedReviewers", FieldValue.arrayUnion(reviewerMap))
                                                 .addOnSuccessListener {
-                                                    // 2. Update/Create Reviewer Doc with Child info
-                                                    val reviewerData = mapOf(
-                                                        "reviewerUid" to uid,
-                                                        "name" to cleanNickname,
-                                                        "pairedChildren" to FieldValue.arrayUnion(childId)
-                                                    )
-                                                    db.collection("reviewers").document(uid)
-                                                        .set(reviewerData, SetOptions.merge())
-                                                        .addOnSuccessListener {
-                                                            preferenceHelper.reviewerName = cleanNickname
-                                                            reviewerName = cleanNickname
-                                                            selectedChildId = childId
-                                                            isPairingInProgress = false
-                                                            FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
-                                                            Toast.makeText(context, "${childName} 어린이 연결 성공! 🎉", Toast.LENGTH_SHORT).show()
-                                                        }
+                                                     // Check if this reviewer has already used the 3 free credits promotion
+                                                     db.collection("reviewers").document(uid).get()
+                                                         .addOnSuccessListener { reviewerDoc ->
+                                                             val freePromotionUsed = reviewerDoc.getBoolean("freePromotionUsed") ?: false
+                                                             
+                                                             if (!freePromotionUsed) {
+                                                                 // Grant 3 free credits to the child document
+                                                                 db.collection("children").document(childId)
+                                                                     .update("credits", 3, "totalCreditsGranted", 3)
+                                                                     .addOnSuccessListener {
+                                                                         val reviewerData = mapOf(
+                                                                             "reviewerUid" to uid,
+                                                                             "name" to cleanNickname,
+                                                                             "pairedChildren" to FieldValue.arrayUnion(childId),
+                                                                             "freePromotionUsed" to true
+                                                                         )
+                                                                         db.collection("reviewers").document(uid)
+                                                                             .set(reviewerData, SetOptions.merge())
+                                                                             .addOnSuccessListener {
+                                                                                 preferenceHelper.reviewerName = cleanNickname
+                                                                                 reviewerName = cleanNickname
+                                                                                 selectedChildId = childId
+                                                                                 isPairingInProgress = false
+                                                                                 FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
+                                                                                 Toast.makeText(context, "${childName} 연결 성공! 신규 가입 무료 3 크레딧이 지급되었습니다! 🎁", Toast.LENGTH_LONG).show()
+                                                                             }
+                                                                     }
+                                                             } else {
+                                                                 // Already used promotion: child stays at 0 credits
+                                                                 val reviewerData = mapOf(
+                                                                     "reviewerUid" to uid,
+                                                                     "name" to cleanNickname,
+                                                                     "pairedChildren" to FieldValue.arrayUnion(childId)
+                                                                 )
+                                                                 db.collection("reviewers").document(uid)
+                                                                     .set(reviewerData, SetOptions.merge())
+                                                                     .addOnSuccessListener {
+                                                                         preferenceHelper.reviewerName = cleanNickname
+                                                                         reviewerName = cleanNickname
+                                                                         selectedChildId = childId
+                                                                         isPairingInProgress = false
+                                                                         FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
+                                                                         Toast.makeText(context, "${childName} 연결 성공! (기존에 무료 프로모션을 이미 사용하여 크레딧이 추가되지 않았습니다.) 🔗", Toast.LENGTH_SHORT).show()
+                                                                     }
+                                                             }
+                                                         }
                                                 }
                                         } else {
                                             isPairingInProgress = false
@@ -590,15 +620,40 @@ fun ParentHomeScreen(
                                     db.collection("children").document(childId)
                                         .update("pairedReviewers", FieldValue.arrayUnion(reviewerMap))
                                         .addOnSuccessListener {
-                                            db.collection("reviewers").document(uid)
-                                                .update("pairedChildren", FieldValue.arrayUnion(childId))
-                                                .addOnSuccessListener {
-                                                    selectedChildId = childId
-                                                    showPairingDialog = false
-                                                    pairingCodeInput = ""
-                                                    isPairingInProgress = false
-                                                    FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
-                                                    Toast.makeText(context, "${childName} 어린이 추가 연결 성공! 🎉", Toast.LENGTH_SHORT).show()
+                                            db.collection("reviewers").document(uid).get()
+                                                .addOnSuccessListener { reviewerDoc ->
+                                                    val freePromotionUsed = reviewerDoc.getBoolean("freePromotionUsed") ?: false
+                                                    
+                                                    if (!freePromotionUsed) {
+                                                        db.collection("children").document(childId)
+                                                            .update("credits", 3, "totalCreditsGranted", 3)
+                                                            .addOnSuccessListener {
+                                                                db.collection("reviewers").document(uid)
+                                                                    .update(
+                                                                        "pairedChildren", FieldValue.arrayUnion(childId),
+                                                                        "freePromotionUsed", true
+                                                                    )
+                                                                    .addOnSuccessListener {
+                                                                        selectedChildId = childId
+                                                                        showPairingDialog = false
+                                                                        pairingCodeInput = ""
+                                                                        isPairingInProgress = false
+                                                                        FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
+                                                                        Toast.makeText(context, "${childName} 연결 성공! 신규 가입 무료 3 크레딧이 지급되었습니다! 🎁", Toast.LENGTH_LONG).show()
+                                                                    }
+                                                            }
+                                                    } else {
+                                                        db.collection("reviewers").document(uid)
+                                                            .update("pairedChildren", FieldValue.arrayUnion(childId))
+                                                            .addOnSuccessListener {
+                                                                selectedChildId = childId
+                                                                showPairingDialog = false
+                                                                pairingCodeInput = ""
+                                                                isPairingInProgress = false
+                                                                FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
+                                                                Toast.makeText(context, "${childName} 연결 성공! (기존에 무료 프로모션을 이미 사용하여 크레딧이 추가되지 않았습니다.) 🔗", Toast.LENGTH_LONG).show()
+                                                            }
+                                                    }
                                                 }
                                         }
                                 } else {
