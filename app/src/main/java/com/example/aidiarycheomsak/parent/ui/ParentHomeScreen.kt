@@ -130,7 +130,7 @@ fun ParentHomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("👩‍👦 똑똑일기 부모용 대시보드", fontWeight = FontWeight.Bold) },
+                title = { Text("👩‍👦 AI고치 부모용 대시보드", fontWeight = FontWeight.Bold) },
                 actions = {
                     if (reviewerName.isNotEmpty()) {
                         IconButton(onClick = { showPairingDialog = true }) {
@@ -155,7 +155,7 @@ fun ParentHomeScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "📢 [광고] 똑똑일기 추천 교재 및 도서 배너 광고",
+                    text = "📢 [광고] AI고치 추천 교재 및 도서 배너 광고",
                     color = Color(0xFF4A5568),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
@@ -193,7 +193,7 @@ fun ParentHomeScreen(
                         )
 
                         Text(
-                            text = "아이의 똑똑일기 분석 결과를 실시간으로 확인하기 위해, 호칭과 페어링 코드를 입력해 주세요.",
+                            text = "아이의 AI고치 분석 결과를 실시간으로 확인하기 위해, 호칭과 페어링 코드를 입력해 주세요.",
                             fontSize = 13.sp,
                             color = Color(0xFF718096),
                             textAlign = TextAlign.Center,

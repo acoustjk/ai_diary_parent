@@ -81,7 +81,7 @@ fun StudentResultScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("👩‍🏫 마법 힌트 & 결과", fontWeight = FontWeight.Bold) },
+                title = { Text("👾 AI고치 결과", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "뒤로가기")
@@ -214,7 +214,7 @@ fun StudentResultScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "👩‍🏫 AI 선생님의 마법 피드백",
+                        text = "👾 AI고치의 다정한 피드백",
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2D3748),
                         fontSize = 15.sp
@@ -274,10 +274,10 @@ fun StudentResultScreen(
                                         action = Intent.ACTION_SEND
                                         putExtra(
                                             Intent.EXTRA_TEXT,
-                                            "✨ [똑똑일기 마법 첨삭 보고서] 💮\n\n" +
+                                            "✨ [AI고치 성장 보고서] 💮\n\n" +
                                                     "👦 작가: $childName 어린이\n" +
                                                     "💮 평가: $stamp\n\n" +
-                                                    "선생님의 피드백 힌트를 읽고 스스로 글솜씨를 쑥쑥 레벨업했어요! 아래 링크를 눌러 아이의 일기 성장 보고서를 확인해보세요. 👇\n" +
+                                                    "AI고치의 피드백 힌트를 읽고 스스로 글솜씨를 쑥쑥 레벨업했어요! 아래 링크를 눌러 아이의 일기 성장 보고서를 확인해보세요. 👇\n" +
                                                     "🔗 보고서 보기: $webLink"
                                         )
                                         type = "text/plain"
@@ -302,7 +302,7 @@ fun StudentResultScreen(
                 } else {
                     // Let the user know they can share after they try rewriting
                     Text(
-                        text = "💡 선생님의 힌트를 읽고 아래 버튼을 눌러 일기를 고쳐 쓰면 부모님께 성장 보고서를 공유할 수 있어요!",
+                        text = "💡 AI고치의 힌트를 읽고 아래 버튼을 눌러 일기를 고쳐 쓰면 부모님께 성장 보고서를 공유할 수 있어요!",
                         fontSize = 12.sp,
                         color = Color(0xFF718096),
                         textAlign = TextAlign.Center,
@@ -398,10 +398,10 @@ fun StudentResultScreen(
                                 action = Intent.ACTION_SEND
                                 putExtra(
                                     Intent.EXTRA_TEXT,
-                                    "✨ [똑똑일기 마법 첨삭 보고서] 💮\n\n" +
+                                    "✨ [AI고치 성장 보고서] 💮\n\n" +
                                             "👦 작가: $childName 어린이\n" +
                                             "💮 평가: $stamp\n\n" +
-                                            "선생님의 피드백 힌트를 읽고 스스로 글솜씨를 쑥쑥 레벨업했어요! 아래 링크를 눌러 아이의 일기 성장 보고서를 확인해보세요. 👇\n" +
+                                            "AI고치의 피드백 힌트를 읽고 스스로 글솜씨를 쑥쑥 레벨업했어요! 아래 링크를 눌러 아이의 일기 성장 보고서를 확인해보세요. 👇\n" +
                                             "🔗 보고서 보기: $webLink"
                                 )
                                 type = "text/plain"
