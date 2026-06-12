@@ -64,4 +64,47 @@ object GeminiService {
             urlConnection.disconnect()
         }
     }
+
+    suspend fun getFirebaseCustomToken(
+        serverUrl: String,
+        provider: String,
+        accessToken: String
+    ): String = withContext(Dispatchers.IO) {
+        val cleanUrl = serverUrl.trim().removeSuffix("/")
+        val urlConnection = URL("$cleanUrl/auth/$provider").openConnection() as HttpURLConnection
+        try {
+            urlConnection.requestMethod = "POST"
+            urlConnection.setRequestProperty("Content-Type", "application/json")
+            urlConnection.setRequestProperty("Accept", "application/json")
+            urlConnection.doOutput = true
+            urlConnection.connectTimeout = 15000
+            urlConnection.readTimeout = 15000
+
+            val payload = mapOf("accessToken" to accessToken)
+            val requestBody = json.encodeToString(payload)
+
+            OutputStreamWriter(urlConnection.outputStream).use { writer ->
+                writer.write(requestBody)
+                writer.flush()
+            }
+
+            val responseCode = urlConnection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                val responseText = urlConnection.inputStream.bufferedReader().use { it.readText() }
+                val jsonObj = org.json.JSONObject(responseText)
+                jsonObj.getString("customToken")
+            } else {
+                val errorText = urlConnection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+                val friendlyMessage = try {
+                    val jsonObj = org.json.JSONObject(errorText)
+                    jsonObj.optString("detail", errorText)
+                } catch (e: Exception) {
+                    errorText
+                }
+                throw Exception("토큰 발급 실패 ($responseCode): $friendlyMessage")
+            }
+        } finally {
+            urlConnection.disconnect()
+        }
+    }
 }

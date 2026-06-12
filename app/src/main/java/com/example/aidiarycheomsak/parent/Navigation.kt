@@ -60,7 +60,7 @@ fun MainNavigation(initialReportId: State<String?>) {
                     backStack.removeLastOrNull()
                 },
                 onRoleChanged = {
-                    // Do nothing in parent-only app
+                    backStack.removeLastOrNull()
                 },
                 modifier = Modifier.safeDrawingPadding()
             )

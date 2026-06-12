@@ -93,4 +93,7 @@ dependencies {
   implementation(libs.firebase.auth)
   implementation(libs.firebase.firestore)
   implementation(libs.firebase.messaging)
+
+  // Kakao Login SDK
+  implementation("com.kakao.sdk:v2-user:2.20.1")
 }

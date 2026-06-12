@@ -1,6 +1,8 @@
 package com.example.aidiarycheomsak.parent.ui
 
 import android.widget.Toast
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,12 +28,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aidiarycheomsak.parent.data.DiaryReport
 import com.example.aidiarycheomsak.parent.data.PreferenceHelper
+import com.example.aidiarycheomsak.parent.data.GeminiService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.kakao.sdk.user.UserApiClient
+import com.kakao.sdk.auth.model.OAuthToken
+import com.kakao.sdk.common.model.ClientError
+import com.kakao.sdk.common.model.ClientErrorCause
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -46,10 +54,29 @@ fun ParentHomeScreen(
     val preferenceHelper = remember { PreferenceHelper(context) }
     val db = remember { FirebaseFirestore.getInstance() }
     val auth = remember { FirebaseAuth.getInstance() }
-    val currentUser = auth.currentUser
+    val scope = rememberCoroutineScope()
+    var isAuthChecking by remember { mutableStateOf(true) }
+    var isUserLoggedIn by remember { mutableStateOf(auth.currentUser != null && !auth.currentUser!!.isAnonymous) }
+    var userEmail by remember { mutableStateOf(auth.currentUser?.email ?: "") }
+    var reviewerName by remember { mutableStateOf(preferenceHelper.reviewerName) }
+
+    DisposableEffect(auth) {
+        val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+            val user = firebaseAuth.currentUser
+            isUserLoggedIn = user != null && !user.isAnonymous
+            userEmail = user?.email ?: ""
+            reviewerName = preferenceHelper.reviewerName
+            if (user == null || user.isAnonymous) {
+                isAuthChecking = false
+            }
+        }
+        auth.addAuthStateListener(listener)
+        onDispose {
+            auth.removeAuthStateListener(listener)
+        }
+    }
 
     // State variables
-    var reviewerName by remember { mutableStateOf(preferenceHelper.reviewerName) }
     var childrenList by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
     var selectedChildId by remember { mutableStateOf("") }
     var diariesList by remember { mutableStateOf<List<DiaryReport>>(emptyList()) }
@@ -63,7 +90,31 @@ fun ParentHomeScreen(
     var isPairingInProgress by remember { mutableStateOf(false) }
 
     // Initial setup auth monitor
-    val uid = currentUser?.uid ?: ""
+    val uid = remember(isUserLoggedIn) { auth.currentUser?.uid ?: "" }
+
+    // Listen for reviewer document changes in real-time
+    DisposableEffect(uid) {
+        if (uid.isNotEmpty()) {
+            val listenerRegistration = db.collection("reviewers").document(uid)
+                .addSnapshotListener { snapshot, e ->
+                    if (snapshot != null && snapshot.exists()) {
+                        val name = snapshot.getString("name") ?: ""
+                        preferenceHelper.reviewerName = name
+                        reviewerName = name
+                    }
+                    isAuthChecking = false
+                }
+            onDispose {
+                listenerRegistration.remove()
+            }
+        } else {
+            if (!isUserLoggedIn && auth.currentUser == null) {
+                isAuthChecking = false
+            }
+            reviewerName = ""
+            onDispose {}
+        }
+    }
 
     // 1. Listen for paired children in real-time
     LaunchedEffect(uid, reviewerName) {
@@ -165,8 +216,20 @@ fun ParentHomeScreen(
         },
         modifier = modifier
     ) { innerPadding ->
-        // Onboarding / Setup Profile Screen (If parent nickname is empty)
-        if (reviewerName.isEmpty()) {
+        if (isAuthChecking) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF7FAFC))
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF3182CE))
+            }
+        } else if (!isUserLoggedIn) {
+            var isAuthLoading by remember { mutableStateOf(false) }
+            var isAgreed by remember { mutableStateOf(false) }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -176,44 +239,192 @@ fun ParentHomeScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Card(
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.padding(32.dp),
+                        verticalArrangement = Arrangement.spacedBy(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "👋 환영합니다! 보호자 연결",
-                            fontSize = 20.sp,
+                            text = "👩‍👦 AI고치 보호자 로그인",
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF2D3748)
                         )
 
                         Text(
-                            text = "아이의 AI고치 분석 결과를 실시간으로 확인하기 위해, 호칭과 페어링 코드를 입력해 주세요.",
-                            fontSize = 13.sp,
+                            text = "아이의 일기 분석 결과를 실시간으로 확인하고 크레딧을 관리하기 위해 로그인해 주세요.\n첫 로그인 시 자동으로 회원가입이 진행됩니다.",
+                            fontSize = 14.sp,
                             color = Color(0xFF718096),
                             textAlign = TextAlign.Center,
-                            lineHeight = 20.sp
+                            lineHeight = 22.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Terms & Privacy Agreement Checkbox Row
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Start,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp)
+                        ) {
+                            Checkbox(
+                                checked = isAgreed,
+                                onCheckedChange = { isAgreed = it },
+                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF3182CE))
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            
+                            Row(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = "이용약관",
+                                    color = Color(0xFF3182CE),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    modifier = Modifier.clickable {
+                                        val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-diary-cheomsak.onrender.com" }
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("${serverUrl.trim().removeSuffix("/")}/terms"))
+                                        context.startActivity(intent)
+                                    }
+                                )
+                                Text(text = " 및 ", color = Color(0xFF718096), fontSize = 13.sp)
+                                Text(
+                                    text = "개인정보 처리방침",
+                                    color = Color(0xFF3182CE),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    modifier = Modifier.clickable {
+                                        val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-diary-cheomsak.onrender.com" }
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("${serverUrl.trim().removeSuffix("/")}/privacy"))
+                                        context.startActivity(intent)
+                                    }
+                                )
+                                Text(text = " 동의 (필수)", color = Color(0xFF718096), fontSize = 13.sp)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        if (isAuthLoading) {
+                            CircularProgressIndicator(color = Color(0xFFFEE500))
+                        } else {
+                            Button(
+                                onClick = {
+                                    isAuthLoading = true
+                                    val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
+                                        if (error != null) {
+                                            isAuthLoading = false
+                                            Toast.makeText(context, "카카오 로그인 실패: ${error.localizedMessage}", Toast.LENGTH_LONG).show()
+                                        } else if (token != null) {
+                                            val accessToken = token.accessToken
+                                            
+                                            // Send token to backend server
+                                            scope.launch {
+                                                try {
+                                                    val serverUrl = preferenceHelper.serverUrl.ifBlank { "http://10.0.2.2:8000" }
+                                                    val customToken = GeminiService.getFirebaseCustomToken(serverUrl, "kakao", accessToken)
+                                                    
+                                                    auth.signInWithCustomToken(customToken)
+                                                        .addOnSuccessListener {
+                                                            isAuthLoading = false
+                                                            Toast.makeText(context, "카카오 로그인 성공! 🎉", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                        .addOnFailureListener { e ->
+                                                            isAuthLoading = false
+                                                            Toast.makeText(context, "Firebase 로그인 실패: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                                        }
+                                                } catch (e: Exception) {
+                                                    isAuthLoading = false
+                                                    Toast.makeText(context, "로그인 처리 실패: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
+                                        UserApiClient.instance.loginWithKakaoTalk(context) { token, error ->
+                                            if (error != null) {
+                                                if (error is ClientError && error.reason == ClientErrorCause.Cancelled) {
+                                                    isAuthLoading = false
+                                                    return@loginWithKakaoTalk
+                                                }
+                                                UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
+                                            } else {
+                                                callback(token, null)
+                                            }
+                                        }
+                                    } else {
+                                        UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
+                                    }
+                                },
+                                enabled = !isAuthLoading && isAgreed,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFFEE500),
+                                    disabledContainerColor = Color(0xFFE2E8F0),
+                                    disabledContentColor = Color(0xFFA0AEC0)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp)
+                            ) {
+                                Text(
+                                    text = "Kakao 아이디로 로그인",
+                                    color = if (isAgreed) Color(0xFF191919) else Color(0xFFA0AEC0),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (reviewerName.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF7FAFC))
+                    .padding(innerPadding)
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(32.dp),
+                        verticalArrangement = Arrangement.spacedBy(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "👋 호칭 설정",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2D3748)
+                        )
+
+                        Text(
+                            text = "아이에게 칭찬 및 피드백 시 표시될 보호자님의 호칭을 입력해 주세요.\n(예: 엄마, 아빠, 선생님, 이모, 삼촌)",
+                            fontSize = 14.sp,
+                            color = Color(0xFF718096),
+                            textAlign = TextAlign.Center,
+                            lineHeight = 22.sp
                         )
 
                         OutlinedTextField(
                             value = pairingNicknameInput,
                             onValueChange = { pairingNicknameInput = it },
-                            label = { Text("보호자 호칭 (예: 엄마, 아빠, 선생님)") },
-                            singleLine = true,
-                            textStyle = TextStyle(color = Color.Black),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        OutlinedTextField(
-                            value = pairingCodeInput,
-                            onValueChange = { pairingCodeInput = it },
-                            label = { Text("아이 앱의 6자리 페어링 코드") },
+                            label = { Text("호칭 입력") },
                             singleLine = true,
                             textStyle = TextStyle(color = Color.Black),
                             modifier = Modifier.fillMaxWidth()
@@ -221,105 +432,41 @@ fun ParentHomeScreen(
 
                         Button(
                             onClick = {
-                                if (pairingNicknameInput.trim().isEmpty() || pairingCodeInput.trim().length != 6) {
-                                    Toast.makeText(context, "올바른 호칭과 6자리 코드를 입력해주세요.", Toast.LENGTH_SHORT).show()
+                                val cleanNickname = pairingNicknameInput.trim()
+                                if (cleanNickname.isEmpty()) {
+                                    Toast.makeText(context, "호칭을 입력해 주세요.", Toast.LENGTH_SHORT).show()
                                     return@Button
                                 }
                                 isPairingInProgress = true
-                                val cleanCode = pairingCodeInput.trim()
-                                val cleanNickname = pairingNicknameInput.trim()
-
-                                // Query child by code
-                                db.collection("children")
-                                    .whereEqualTo("pairingCode", cleanCode)
-                                    .get()
-                                    .addOnSuccessListener { querySnapshot ->
-                                        val doc = querySnapshot.documents.firstOrNull()
-                                        if (doc != null && doc.exists()) {
-                                            val expires = doc.getLong("pairingCodeExpires") ?: 0L
-                                            if (expires < System.currentTimeMillis() / 1000) {
-                                                isPairingInProgress = false
-                                                Toast.makeText(context, "만료된 코드입니다. 아이 앱에서 다시 발급받아 주세요.", Toast.LENGTH_LONG).show()
-                                                return@addOnSuccessListener
-                                            }
-
-                                            val childId = doc.getString("childId") ?: ""
-                                            val childName = doc.getString("childName") ?: ""
-
-                                            // Update relations
-                                            val reviewerMap = mapOf("uid" to uid, "name" to cleanNickname)
-                                            
-                                            // 1. Update Child Doc with Reviewer info
-                                            db.collection("children").document(childId)
-                                                .update("pairedReviewers", FieldValue.arrayUnion(reviewerMap))
-                                                .addOnSuccessListener {
-                                                     // Check if this reviewer has already used the 3 free credits promotion
-                                                     db.collection("reviewers").document(uid).get()
-                                                         .addOnSuccessListener { reviewerDoc ->
-                                                             val freePromotionUsed = reviewerDoc.getBoolean("freePromotionUsed") ?: false
-                                                             
-                                                             if (!freePromotionUsed) {
-                                                                 // Grant 3 free credits to the child document
-                                                                 db.collection("children").document(childId)
-                                                                     .update("credits", 3, "totalCreditsGranted", 3)
-                                                                     .addOnSuccessListener {
-                                                                         val reviewerData = mapOf(
-                                                                             "reviewerUid" to uid,
-                                                                             "name" to cleanNickname,
-                                                                             "pairedChildren" to FieldValue.arrayUnion(childId),
-                                                                             "freePromotionUsed" to true
-                                                                         )
-                                                                         db.collection("reviewers").document(uid)
-                                                                             .set(reviewerData, SetOptions.merge())
-                                                                             .addOnSuccessListener {
-                                                                                 preferenceHelper.reviewerName = cleanNickname
-                                                                                 reviewerName = cleanNickname
-                                                                                 selectedChildId = childId
-                                                                                 isPairingInProgress = false
-                                                                                 FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
-                                                                                 Toast.makeText(context, "${childName} 연결 성공! 신규 가입 무료 3 크레딧이 지급되었습니다! 🎁", Toast.LENGTH_LONG).show()
-                                                                             }
-                                                                     }
-                                                             } else {
-                                                                 // Already used promotion: child stays at 0 credits
-                                                                 val reviewerData = mapOf(
-                                                                     "reviewerUid" to uid,
-                                                                     "name" to cleanNickname,
-                                                                     "pairedChildren" to FieldValue.arrayUnion(childId)
-                                                                 )
-                                                                 db.collection("reviewers").document(uid)
-                                                                     .set(reviewerData, SetOptions.merge())
-                                                                     .addOnSuccessListener {
-                                                                         preferenceHelper.reviewerName = cleanNickname
-                                                                         reviewerName = cleanNickname
-                                                                         selectedChildId = childId
-                                                                         isPairingInProgress = false
-                                                                         FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
-                                                                         Toast.makeText(context, "${childName} 연결 성공! (기존에 무료 프로모션을 이미 사용하여 크레딧이 추가되지 않았습니다.) 🔗", Toast.LENGTH_SHORT).show()
-                                                                     }
-                                                             }
-                                                         }
-                                                }
-                                        } else {
-                                            isPairingInProgress = false
-                                            Toast.makeText(context, "일치하는 코드를 찾을 수 없습니다. 코드를 다시 확인해 주세요.", Toast.LENGTH_LONG).show()
-                                        }
-                                    }
-                                    .addOnFailureListener {
+                                val reviewerData = mapOf(
+                                    "reviewerUid" to uid,
+                                    "name" to cleanNickname,
+                                    "pairedChildren" to emptyList<String>(),
+                                    "freePromotionUsed" to false
+                                )
+                                db.collection("reviewers").document(uid)
+                                    .set(reviewerData, SetOptions.merge())
+                                    .addOnSuccessListener {
+                                        preferenceHelper.reviewerName = cleanNickname
+                                        reviewerName = cleanNickname
                                         isPairingInProgress = false
-                                        Toast.makeText(context, "연결 실패: ${it.localizedMessage}", Toast.LENGTH_LONG).show()
+                                        Toast.makeText(context, "호칭이 설정되었습니다! 🎉", Toast.LENGTH_SHORT).show()
+                                    }
+                                    .addOnFailureListener { e ->
+                                        isPairingInProgress = false
+                                        Toast.makeText(context, "호칭 설정 실패: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                                     }
                             },
                             enabled = !isPairingInProgress,
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3182CE)),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp)
+                                .height(50.dp)
                         ) {
                             if (isPairingInProgress) {
                                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                             } else {
-                                Text("연결하기", fontWeight = FontWeight.Bold)
+                                Text("설정 완료", fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -349,20 +496,39 @@ fun ParentHomeScreen(
                     }
                 } else if (childrenList.isEmpty()) {
                     Card(
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF5F5)),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             Text(
-                                text = "연결된 자녀가 없습니다.\n우측 상단의 '+' 버튼을 눌러 연동해 주세요.",
-                                fontSize = 12.sp,
-                                color = Color(0xFFC53030)
+                                text = "👦 연결된 자녀가 없습니다",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2D3748)
                             )
+                            Text(
+                                text = "자녀의 앱 화면에 표시된 6자리 페어링 코드를 등록하여 연동을 시작하세요.\n연동 완료 시 아이의 일기 분석 내역을 실시간으로 확인하실 수 있습니다.",
+                                fontSize = 13.sp,
+                                color = Color(0xFF718096),
+                                textAlign = TextAlign.Center,
+                                lineHeight = 20.sp
+                            )
+                            Button(
+                                onClick = { showPairingDialog = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3182CE)),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                            ) {
+                                Text("자녀 연결하기", fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 } else {
@@ -403,53 +569,127 @@ fun ParentHomeScreen(
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Row(
+                                    modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                    modifier = Modifier.weight(1f)
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(text = "🪙", fontSize = 22.sp)
-                                    Column {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(text = "🪙", fontSize = 22.sp)
+                                        Column {
+                                            Text(
+                                                text = "${childName}의 남은 크레딧: ${credits}개",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 14.sp,
+                                                color = Color(0xFFB7791F)
+                                            )
+                                            Text(
+                                                text = "사용 가능 크레딧: ${credits} / ${totalCredits}개",
+                                                fontSize = 11.sp,
+                                                color = Color(0xFF744210)
+                                            )
+                                        }
+                                    }
+
+                                    val primaryParentId = selectedChild["primaryParentId"] as? String ?: ""
+                                    val isPrimary = primaryParentId == uid
+
+                                    Button(
+                                        onClick = {
+                                            val updateMap = mapOf<String, Any>(
+                                                "credits" to FieldValue.increment(10),
+                                                "totalCreditsGranted" to FieldValue.increment(10)
+                                            )
+                                            db.collection("children").document(selectedChildId)
+                                                .update(updateMap)
+                                                .addOnSuccessListener {
+                                                    Toast.makeText(context, "${childName}\uc758\u0020\ud06c\ub808\ub5a7\uc774\u0020\u0031\u0030\uac1c\u0020\ucd1d\uc804\ub41c\uc5c8\uc2b5\ub2c8\ub2e4\u0021\u0020\ud83e\ude99", Toast.LENGTH_SHORT).show()
+                                                }
+                                                .addOnFailureListener { e ->
+                                                    Toast.makeText(context, "충전 실패: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                                }
+                                        },
+                                        enabled = isPrimary,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (isPrimary) Color(0xFFD69E2E) else Color(0xFFCBD5E0)
+                                        ),
+                                        shape = RoundedCornerShape(8.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
                                         Text(
-                                            text = "${childName}의 남은 크레딧: ${credits}개",
+                                            text = "크레딧 충전 (+10)",
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp,
-                                            color = Color(0xFFB7791F)
-                                        )
-                                        Text(
-                                            text = "사용 가능 크레딧: ${credits} / ${totalCredits}개",
-                                            fontSize = 11.sp,
-                                            color = Color(0xFF744210)
+                                            fontSize = 12.sp,
+                                            color = if (isPrimary) Color.White else Color(0xFF718096)
                                         )
                                     }
                                 }
-                                
-                                Button(
+
+                                val primaryParentId = selectedChild["primaryParentId"] as? String ?: ""
+                                if (primaryParentId.isNotEmpty() && primaryParentId != uid) {
+                                    Text(
+                                        text = "⚠️ 다른 보호자가 대표(결제 권한자)로 지정되어 있습니다.",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFFE53E3E),
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+
+                                HorizontalDivider(color = Color(0xFFFBD38D))
+
+                                var isUnpairingInProgress by remember { mutableStateOf(false) }
+
+                                TextButton(
                                     onClick = {
+                                        isUnpairingInProgress = true
+                                        val reviewerMap = mapOf("uid" to uid, "name" to reviewerName)
+
+                                        // 1. Remove parent from child's pairedReviewers
                                         db.collection("children").document(selectedChildId)
-                                            .update(
-                                                "credits", FieldValue.increment(10),
-                                                "totalCreditsGranted", FieldValue.increment(10)
-                                            )
+                                            .update("pairedReviewers", FieldValue.arrayRemove(reviewerMap))
                                             .addOnSuccessListener {
-                                                Toast.makeText(context, "${childName}의 크레딧이 10개 충전되었습니다! 🪙", Toast.LENGTH_SHORT).show()
+                                                // 2. Remove child from parent's pairedChildren
+                                                db.collection("reviewers").document(uid)
+                                                    .update("pairedChildren", FieldValue.arrayRemove(selectedChildId))
+                                                    .addOnSuccessListener {
+                                                        // 3. Unsubscribe from topic
+                                                        FirebaseMessaging.getInstance().unsubscribeFromTopic("child_$selectedChildId")
+                                                        Toast.makeText(context, "${childName} 연결이 해제되었습니다. 👋", Toast.LENGTH_SHORT).show()
+
+                                                        selectedChildId = ""
+                                                        isUnpairingInProgress = false
+                                                    }
+                                                    .addOnFailureListener { e ->
+                                                        isUnpairingInProgress = false
+                                                        Toast.makeText(context, "연결 해제 실패: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                                    }
                                             }
                                             .addOnFailureListener { e ->
-                                                Toast.makeText(context, "충전 실패: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                                isUnpairingInProgress = false
+                                                Toast.makeText(context, "연결 해제 실패: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
                                             }
                                     },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD69E2E)),
-                                    shape = RoundedCornerShape(8.dp),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                    enabled = !isUnpairingInProgress,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFE53E3E))
                                 ) {
-                                    Text("크레딧 충전 (+10)", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                                    if (isUnpairingInProgress) {
+                                        CircularProgressIndicator(color = Color(0xFFE53E3E), modifier = Modifier.size(20.dp))
+                                    } else {
+                                        Text(
+                                            text = "❌ 이 자녀 연결 해제하기 (내 목록에서 삭제)",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -616,9 +856,17 @@ fun ParentHomeScreen(
                                     val childName = doc.getString("childName") ?: ""
 
                                     val reviewerMap = mapOf("uid" to uid, "name" to reviewerName)
+                                    val currentReviewers = doc.get("pairedReviewers") as? List<*> ?: emptyList<Any>()
+                                    val isFirstParent = currentReviewers.isEmpty()
+                                    val updateMap = mutableMapOf<String, Any>(
+                                        "pairedReviewers" to FieldValue.arrayUnion(reviewerMap)
+                                    )
+                                    if (isFirstParent) {
+                                        updateMap["primaryParentId"] = uid
+                                    }
                                     
                                     db.collection("children").document(childId)
-                                        .update("pairedReviewers", FieldValue.arrayUnion(reviewerMap))
+                                        .update(updateMap)
                                         .addOnSuccessListener {
                                             db.collection("reviewers").document(uid).get()
                                                 .addOnSuccessListener { reviewerDoc ->
@@ -628,11 +876,14 @@ fun ParentHomeScreen(
                                                         db.collection("children").document(childId)
                                                             .update("credits", 3, "totalCreditsGranted", 3)
                                                             .addOnSuccessListener {
-                                                                db.collection("reviewers").document(uid)
-                                                                    .update(
-                                                                        "pairedChildren", FieldValue.arrayUnion(childId),
-                                                                        "freePromotionUsed", true
-                                                                    )
+                                                                val reviewerData = mapOf(
+                                                                     "reviewerUid" to uid,
+                                                                     "name" to reviewerName,
+                                                                     "pairedChildren" to FieldValue.arrayUnion(childId),
+                                                                     "freePromotionUsed" to true
+                                                                 )
+                                                                 db.collection("reviewers").document(uid)
+                                                                     .set(reviewerData, SetOptions.merge())
                                                                     .addOnSuccessListener {
                                                                         selectedChildId = childId
                                                                         showPairingDialog = false
@@ -641,10 +892,23 @@ fun ParentHomeScreen(
                                                                         FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
                                                                         Toast.makeText(context, "${childName} 연결 성공! 신규 가입 무료 3 크레딧이 지급되었습니다! 🎁", Toast.LENGTH_LONG).show()
                                                                     }
+                                                                    .addOnFailureListener { e ->
+                                                                        isPairingInProgress = false
+                                                                        Toast.makeText(context, "보호자 정보 등록 실패: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                                                    }
+                                                            }
+                                                            .addOnFailureListener { e ->
+                                                                isPairingInProgress = false
+                                                                Toast.makeText(context, "자녀 크레딧 지급 실패: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                                                             }
                                                     } else {
-                                                        db.collection("reviewers").document(uid)
-                                                            .update("pairedChildren", FieldValue.arrayUnion(childId))
+                                                        val reviewerData = mapOf(
+                                                             "reviewerUid" to uid,
+                                                             "name" to reviewerName,
+                                                             "pairedChildren" to FieldValue.arrayUnion(childId)
+                                                         )
+                                                         db.collection("reviewers").document(uid)
+                                                             .set(reviewerData, SetOptions.merge())
                                                             .addOnSuccessListener {
                                                                 selectedChildId = childId
                                                                 showPairingDialog = false
@@ -653,8 +917,20 @@ fun ParentHomeScreen(
                                                                 FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
                                                                 Toast.makeText(context, "${childName} 연결 성공! (기존에 무료 프로모션을 이미 사용하여 크레딧이 추가되지 않았습니다.) 🔗", Toast.LENGTH_LONG).show()
                                                             }
+                                                            .addOnFailureListener { e ->
+                                                                isPairingInProgress = false
+                                                                Toast.makeText(context, "보호자 자녀 목록 업데이트 실패: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                                            }
                                                     }
                                                 }
+                                                .addOnFailureListener { e ->
+                                                    isPairingInProgress = false
+                                                    Toast.makeText(context, "보호자 정보 확인 실패: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                                }
+                                        }
+                                        .addOnFailureListener { e ->
+                                            isPairingInProgress = false
+                                            Toast.makeText(context, "자녀 연결 정보 업데이트 실패: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                                         }
                                 } else {
                                     isPairingInProgress = false
