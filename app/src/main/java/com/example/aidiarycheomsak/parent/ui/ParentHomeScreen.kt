@@ -313,6 +313,22 @@ fun ParentHomeScreen(
 
                         Spacer(modifier = Modifier.height(4.dp))
 
+                        Text(
+                            text = "[오픈소스 라이선스 고지]",
+                            color = Color(0xFF718096),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal,
+                            modifier = Modifier
+                                .clickable {
+                                    val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-diary-cheomsak.onrender.com" }
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("${serverUrl.trim().removeSuffix("/")}/licenses"))
+                                    context.startActivity(intent)
+                                }
+                                .padding(vertical = 4.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
                         if (isAuthLoading) {
                             CircularProgressIndicator(color = Color(0xFFFEE500))
                         } else {
