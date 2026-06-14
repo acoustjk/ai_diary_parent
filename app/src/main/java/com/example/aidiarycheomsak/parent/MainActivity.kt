@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
   private fun createNotificationChannel() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val name = "\uc77c\uae30\u0020\uc131\uc7a5\u0020\ubcf4\uace0\uc11c" // "일기 성장 보고서"
-      val descriptionText = "\uc790\ub140\uc75c\u0020\uc77c\uae30\u0020\ucd5c\uc885\u0020\uc644\ub8cc\u0020\ubc0f\u0020\ud06c\ub808\ub5a7\u0020\uc54c\ub9bc\uc744\u0020\uc218\uc2e0\ud569\ub2c8\ub2e4\u002e" // "자녀의 일기 최종 완료 및 크레딧 알림을 수신합니다."
+      val descriptionText = "자녀의 일기 최종 완료 및 마법이슬 알림을 수신합니다."
       val importance = NotificationManager.IMPORTANCE_HIGH
       val channel = NotificationChannel("diary_notification_channel", name, importance).apply {
         description = descriptionText

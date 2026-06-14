@@ -257,7 +257,7 @@ fun ParentHomeScreen(
                         )
 
                         Text(
-                            text = "아이의 일기 분석 결과를 실시간으로 확인하고 크레딧을 관리하기 위해 로그인해 주세요.\n첫 로그인 시 자동으로 회원가입이 진행됩니다.",
+                            text = "아이의 일기 분석 결과를 실시간으로 확인하고 마법이슬을 관리하기 위해 로그인해 주세요.\n첫 로그인 시 자동으로 회원가입이 진행됩니다.",
                             fontSize = 14.sp,
                             color = Color(0xFF718096),
                             textAlign = TextAlign.Center,
@@ -570,7 +570,7 @@ fun ParentHomeScreen(
                     }
                 }
 
-                // 🪙 자녀 크레딧 현황 및 충전 카드
+                // 🪙 자녀 마법이슬 현황 및 충전 카드
                 if (selectedChildId.isNotEmpty()) {
                     val selectedChild = childrenList.find { (it["childId"] as? String) == selectedChildId }
                     if (selectedChild != null) {
@@ -602,13 +602,13 @@ fun ParentHomeScreen(
                                         Text(text = "🪙", fontSize = 22.sp)
                                         Column {
                                             Text(
-                                                text = "${childName}의 남은 크레딧: ${credits}개",
+                                                text = "${childName}의 남은 마법이슬: ${credits}개",
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 14.sp,
                                                 color = Color(0xFFB7791F)
                                             )
                                             Text(
-                                                text = "사용 가능 크레딧: ${credits} / ${totalCredits}개",
+                                                text = "사용 가능 마법이슬: ${credits} / ${totalCredits}개",
                                                 fontSize = 11.sp,
                                                 color = Color(0xFF744210)
                                             )
@@ -627,7 +627,7 @@ fun ParentHomeScreen(
                                             db.collection("children").document(selectedChildId)
                                                 .update(updateMap)
                                                 .addOnSuccessListener {
-                                                    Toast.makeText(context, "${childName}\uc758\u0020\ud06c\ub808\ub5a7\uc774\u0020\u0031\u0030\uac1c\u0020\ucd1d\uc804\ub41c\uc5c8\uc2b5\ub2c8\ub2e4\u0021\u0020\ud83e\ude99", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, "${childName}의 마법이슬이 10개 충전되었습니다! 🪙", Toast.LENGTH_SHORT).show()
                                                 }
                                                 .addOnFailureListener { e ->
                                                     Toast.makeText(context, "충전 실패: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
@@ -641,7 +641,7 @@ fun ParentHomeScreen(
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                                     ) {
                                         Text(
-                                            text = "크레딧 충전 (+10)",
+                                            text = "마법이슬 충전 (+10)",
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp,
                                             color = if (isPrimary) Color.White else Color(0xFF718096)
@@ -906,7 +906,7 @@ fun ParentHomeScreen(
                                                                         pairingCodeInput = ""
                                                                         isPairingInProgress = false
                                                                         FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
-                                                                        Toast.makeText(context, "${childName} 연결 성공! 신규 가입 무료 3 크레딧이 지급되었습니다! 🎁", Toast.LENGTH_LONG).show()
+                                                                        Toast.makeText(context, "${childName} 연결 성공! 신규 가입 무료 마법이슬 3개가 지급되었습니다! 🎁", Toast.LENGTH_LONG).show()
                                                                     }
                                                                     .addOnFailureListener { e ->
                                                                         isPairingInProgress = false
@@ -915,7 +915,7 @@ fun ParentHomeScreen(
                                                             }
                                                             .addOnFailureListener { e ->
                                                                 isPairingInProgress = false
-                                                                Toast.makeText(context, "자녀 크레딧 지급 실패: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                                                Toast.makeText(context, "자녀 마법이슬 지급 실패: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                                                             }
                                                     } else {
                                                         val reviewerData = mapOf(
@@ -931,7 +931,7 @@ fun ParentHomeScreen(
                                                                 pairingCodeInput = ""
                                                                 isPairingInProgress = false
                                                                 FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
-                                                                Toast.makeText(context, "${childName} 연결 성공! (기존에 무료 프로모션을 이미 사용하여 크레딧이 추가되지 않았습니다.) 🔗", Toast.LENGTH_LONG).show()
+                                                                Toast.makeText(context, "${childName} 연결 성공! (기존에 무료 프로모션을 이미 사용하여 마법이슬이 추가되지 않았습니다.) 🔗", Toast.LENGTH_LONG).show()
                                                             }
                                                             .addOnFailureListener { e ->
                                                                 isPairingInProgress = false
