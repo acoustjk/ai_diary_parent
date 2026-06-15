@@ -166,6 +166,7 @@ fun ParentHomeScreen(
                                 secondExpressionScore = doc.getLong("secondExpressionScore")?.toInt() ?: 0,
                                 stamp = doc.getString("stamp") ?: "",
                                 improved = doc.getBoolean("improved") ?: false,
+                                typingSpeed = doc.getLong("wpm")?.toInt() ?: 0,
                                 timestamp = doc.getLong("timestamp") ?: 0L
                             )
                             list.add(report)
@@ -182,7 +183,7 @@ fun ParentHomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("👩‍👦 AI고치 부모용 대시보드", fontWeight = FontWeight.Bold) },
+                title = { Text("👩‍👦 AI고치 보호자용 대시보드", fontWeight = FontWeight.Bold) },
                 actions = {
                     if (reviewerName.isNotEmpty()) {
                         IconButton(onClick = { showPairingDialog = true }) {

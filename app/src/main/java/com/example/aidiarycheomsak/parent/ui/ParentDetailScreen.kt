@@ -299,7 +299,7 @@ fun ParentDetailScreen(
                             }
 
                             // Share text back to child
-                            val replyMsg = "💌 [부모님의 칭찬 편지]\n$replyText"
+                            val replyMsg = "💌 [보호자님의 칭찬 편지]\n$replyText"
                             val sendIntent: Intent = Intent().apply {
                                 action = Intent.ACTION_SEND
                                 putExtra(Intent.EXTRA_TEXT, replyMsg)

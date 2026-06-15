@@ -282,7 +282,7 @@ fun StudentResultScreen(
                                         )
                                         type = "text/plain"
                                     }
-                                    val shareIntent = Intent.createChooser(sendIntent, "부모님께 보고서 자랑하기")
+                                    val shareIntent = Intent.createChooser(sendIntent, "보호자님께 보고서 자랑하기")
                                     context.startActivity(shareIntent)
                                 }
                             } else {
@@ -297,12 +297,12 @@ fun StudentResultScreen(
                     ) {
                         Icon(imageVector = Icons.Default.Share, contentDescription = "공유")
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("💌 부모님께 성장 보고서 자랑하기", fontWeight = FontWeight.Bold)
+                        Text("💌 보호자님께 성장 보고서 자랑하기", fontWeight = FontWeight.Bold)
                     }
                 } else {
                     // Let the user know they can share after they try rewriting
                     Text(
-                        text = "💡 AI고치의 힌트를 읽고 아래 버튼을 눌러 일기를 고쳐 쓰면 부모님께 성장 보고서를 공유할 수 있어요!",
+                        text = "💡 AI고치의 힌트를 읽고 아래 버튼을 눌러 일기를 고쳐 쓰면 보호자님께 성장 보고서를 공유할 수 있어요!",
                         fontSize = 12.sp,
                         color = Color(0xFF718096),
                         textAlign = TextAlign.Center,
@@ -344,7 +344,7 @@ fun StudentResultScreen(
             title = { Text("어린이 이름 입력", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("부모님께 보낼 보고서에 들어갈 이름을 입력해주세요.")
+                    Text("보호자님께 보낼 보고서에 들어갈 이름을 입력해주세요.")
                     OutlinedTextField(
                         value = childName,
                         onValueChange = { childName = it },
@@ -406,7 +406,7 @@ fun StudentResultScreen(
                                 )
                                 type = "text/plain"
                             }
-                            val shareIntent = Intent.createChooser(sendIntent, "부모님께 보고서 자랑하기")
+                            val shareIntent = Intent.createChooser(sendIntent, "보호자님께 보고서 자랑하기")
                             context.startActivity(shareIntent)
                         }
                     }
