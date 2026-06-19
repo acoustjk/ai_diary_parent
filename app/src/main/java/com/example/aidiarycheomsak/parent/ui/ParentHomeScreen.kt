@@ -167,7 +167,9 @@ fun ParentHomeScreen(
                                 stamp = doc.getString("stamp") ?: "",
                                 improved = doc.getBoolean("improved") ?: false,
                                 typingSpeed = doc.getLong("wpm")?.toInt() ?: 0,
-                                timestamp = doc.getLong("timestamp") ?: 0L
+                                timestamp = doc.getLong("timestamp") ?: 0L,
+                                originalLength = doc.getLong("originalLength")?.toInt() ?: 0,
+                                rewrittenLength = doc.getLong("rewrittenLength")?.toInt() ?: 0
                             )
                             list.add(report)
                         }
