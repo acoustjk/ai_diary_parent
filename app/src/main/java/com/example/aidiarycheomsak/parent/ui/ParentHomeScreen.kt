@@ -155,6 +155,16 @@ fun ParentHomeScreen(
         }
     }
 
+    // 1.5. Ensure subscription to all paired children's FCM topics
+    LaunchedEffect(childrenList) {
+        childrenList.forEach { child ->
+            val childId = child["childId"] as? String ?: ""
+            if (childId.isNotEmpty()) {
+                FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
+            }
+        }
+    }
+
     // 2. Listen for selected child's diaries in real-time
     LaunchedEffect(selectedChildId) {
         if (selectedChildId.isNotEmpty()) {
