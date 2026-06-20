@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -199,6 +200,12 @@ fun ParentHomeScreen(
             TopAppBar(
                 title = { Text("👩‍👦 AI고치 보호자용 대시보드", fontWeight = FontWeight.Bold) },
                 actions = {
+                    IconButton(onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://ai-gochi.com"))
+                        context.startActivity(intent)
+                    }) {
+                        Icon(imageVector = Icons.Default.Home, contentDescription = "홈페이지 바로가기")
+                    }
                     if (reviewerName.isNotEmpty()) {
                         IconButton(onClick = { showPairingDialog = true }) {
                             Icon(imageVector = Icons.Default.Add, contentDescription = "자녀 추가")
@@ -212,21 +219,34 @@ fun ParentHomeScreen(
             )
         },
         bottomBar = {
-            // Requirement 2: AdMob Banner
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp)
-                    .background(Color(0xFFE2E8F0))
-                    .padding(8.dp),
-                contentAlignment = Alignment.Center
+                    .background(Color(0xFFF7FAFC)),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "📢 [광고] AI고치 추천 교재 및 도서 배너 광고",
-                    color = Color(0xFF4A5568),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
+                    text = "🔒 아이용 앱에는 광고가 없습니다.",
+                    color = Color(0xFF718096),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 6.dp, bottom = 6.dp)
                 )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .background(Color(0xFFE2E8F0))
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "📢 [광고] AI고치 추천 교재 및 도서 배너 광고",
+                        color = Color(0xFF4A5568),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         },
         modifier = modifier
