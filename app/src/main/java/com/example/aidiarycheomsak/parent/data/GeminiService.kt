@@ -107,4 +107,59 @@ object GeminiService {
             urlConnection.disconnect()
         }
     }
+
+    suspend fun verifyGooglePlayPurchase(
+        serverUrl: String,
+        purchaseToken: String,
+        productId: String,
+        parentUid: String,
+        packageName: String = "com.example.aidiarycheomsak.parent",
+        childId: String? = null
+    ): Boolean = withContext(Dispatchers.IO) {
+        val cleanUrl = serverUrl.trim().removeSuffix("/")
+        val urlConnection = URL("$cleanUrl/api/payment/verify-google-play").openConnection() as HttpURLConnection
+        try {
+            urlConnection.requestMethod = "POST"
+            urlConnection.setRequestProperty("Content-Type", "application/json")
+            urlConnection.setRequestProperty("Accept", "application/json")
+            urlConnection.doOutput = true
+            urlConnection.connectTimeout = 15000
+            urlConnection.readTimeout = 15000
+
+            val payload = mutableMapOf(
+                "purchaseToken" to purchaseToken,
+                "productId" to productId,
+                "packageName" to packageName,
+                "parentUid" to parentUid
+            )
+            if (!childId.isNullOrEmpty()) {
+                payload["childId"] = childId
+            }
+            val requestBody = json.encodeToString(payload)
+
+            OutputStreamWriter(urlConnection.outputStream).use { writer ->
+                writer.write(requestBody)
+                writer.flush()
+            }
+
+            val responseCode = urlConnection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                val responseText = urlConnection.inputStream.bufferedReader().use { it.readText() }
+                val jsonObj = org.json.JSONObject(responseText)
+                jsonObj.getString("status") == "success"
+            } else {
+                val errorText = urlConnection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+                val friendlyMessage = try {
+                    val jsonObj = org.json.JSONObject(errorText)
+                    jsonObj.optString("detail", errorText)
+                } catch (e: Exception) {
+                    errorText
+                }
+                throw Exception("결제 검증 실패 ($responseCode): $friendlyMessage")
+            }
+        } finally {
+            urlConnection.disconnect()
+        }
+    }
 }
+

@@ -96,4 +96,7 @@ dependencies {
 
   // Kakao Login SDK
   implementation("com.kakao.sdk:v2-user:2.20.1")
+
+  // Google Play Billing
+  implementation(libs.android.billing)
 }

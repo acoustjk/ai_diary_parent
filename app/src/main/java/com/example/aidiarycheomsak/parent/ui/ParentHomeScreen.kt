@@ -1,5 +1,6 @@
 package com.example.aidiarycheomsak.parent.ui
 
+import android.app.Activity
 import android.widget.Toast
 import android.content.Intent
 import android.net.Uri
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.example.aidiarycheomsak.parent.data.DiaryReport
 import com.example.aidiarycheomsak.parent.data.PreferenceHelper
 import com.example.aidiarycheomsak.parent.data.GeminiService
+import com.example.aidiarycheomsak.parent.data.BillingHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -85,9 +87,19 @@ fun ParentHomeScreen(
 
     // Dialog state
     var showPairingDialog by remember { mutableStateOf(false) }
+    var showPurchaseDialog by remember { mutableStateOf(false) }
     var pairingCodeInput by remember { mutableStateOf("") }
     var pairingNicknameInput by remember { mutableStateOf("") }
     var isPairingInProgress by remember { mutableStateOf(false) }
+
+    val activity = remember(context) { context as? Activity }
+    val serverUrl = remember { preferenceHelper.serverUrl.ifBlank { "https://ai-diary-cheomsak.onrender.com" } }
+    val billingHelper = remember {
+        BillingHelper(context, serverUrl) { productId, creditsAdded ->
+            // Trigger UI reload or Firestore sync if needed. 
+            // Real-time snapshot listener on Firebase children collection will automatically update the credits UI!
+        }
+    }
 
     // Initial setup auth monitor
     val uid = remember(isUserLoggedIn) { auth.currentUser?.uid ?: "" }
@@ -623,18 +635,7 @@ fun ParentHomeScreen(
 
                                     Button(
                                         onClick = {
-                                            val updateMap = mapOf<String, Any>(
-                                                "credits" to FieldValue.increment(10),
-                                                "totalCreditsGranted" to FieldValue.increment(10)
-                                            )
-                                            db.collection("children").document(selectedChildId)
-                                                .update(updateMap)
-                                                .addOnSuccessListener {
-                                                    Toast.makeText(context, "${childName}의 마법이슬이 10개 충전되었습니다! 🪙", Toast.LENGTH_SHORT).show()
-                                                }
-                                                .addOnFailureListener { e ->
-                                                    Toast.makeText(context, "충전 실패: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                                                }
+                                            showPurchaseDialog = true
                                         },
                                         enabled = isPrimary,
                                         colors = ButtonDefaults.buttonColors(
@@ -644,7 +645,7 @@ fun ParentHomeScreen(
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                                     ) {
                                         Text(
-                                            text = "마법이슬 충전 (+10)",
+                                            text = "마법이슬 충전",
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp,
                                             color = if (isPrimary) Color.White else Color(0xFF718096)
@@ -973,6 +974,100 @@ fun ParentHomeScreen(
             dismissButton = {
                 TextButton(onClick = { showPairingDialog = false }) {
                     Text("취소")
+                }
+            }
+        )
+    }
+
+    if (showPurchaseDialog && selectedChildId.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { showPurchaseDialog = false },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("🪙 마법이슬 충전소", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "자녀의 첨삭 지도를 위한 마법이슬을 구매합니다. 결제 완료 즉시 자녀의 계정에 마법이슬이 지급됩니다.",
+                        fontSize = 13.sp,
+                        color = Color.Gray
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    val products = listOf(
+                        Triple("magical_dew_1", "마법이슬 1개", "1,000원"),
+                        Triple("magical_dew_10", "마법이슬 10개", "9,900원"),
+                        Triple("magical_dew_30", "마법이슬 30개", "27,000원"),
+                        Triple("magical_dew_subscription", "정기 구독 (월 100개)", "39,000원 / 월")
+                    )
+
+                    products.forEach { (productId, productName, price) ->
+                        val isSub = productId == "magical_dew_subscription"
+                        
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSub) Color(0xFFFEF3C7) else Color(0xFFF3F4F6)
+                            ),
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = if (isSub) Color(0xFFF59E0B) else Color(0xFFD1D5DB)
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    if (activity != null) {
+                                        billingHelper.launchBillingFlow(activity, productId, isSub, selectedChildId)
+                                        showPurchaseDialog = false
+                                    } else {
+                                        Toast.makeText(context, "결제 창을 열 수 없습니다.", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = productName,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = if (isSub) Color(0xFFB45309) else Color(0xFF1F2937)
+                                    )
+                                    Text(
+                                        text = if (isSub) "매달 마법이슬 100개 정기 충전" else "${productName.replace("마법이슬 ", "")} 즉시 충전",
+                                        fontSize = 11.sp,
+                                        color = if (isSub) Color(0xFFD97706) else Color(0xFF6B7280)
+                                    )
+                                }
+                                Text(
+                                    text = price,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 15.sp,
+                                    color = if (isSub) Color(0xFFB45309) else Color(0xFF2563EB)
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showPurchaseDialog = false }) {
+                    Text("닫기", color = Color(0xFF4B5563))
                 }
             }
         )
