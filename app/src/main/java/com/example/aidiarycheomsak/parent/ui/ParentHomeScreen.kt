@@ -333,26 +333,38 @@ fun ParentHomeScreen(
                                     text = "이용약관",
                                     color = Color(0xFF3182CE),
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp,
+                                    fontSize = 12.sp,
                                     modifier = Modifier.clickable {
                                         val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-diary-cheomsak.onrender.com" }
                                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("${serverUrl.trim().removeSuffix("/")}/terms"))
                                         context.startActivity(intent)
                                     }
                                 )
-                                Text(text = " 및 ", color = Color(0xFF718096), fontSize = 13.sp)
+                                Text(text = ", ", color = Color(0xFF718096), fontSize = 12.sp)
                                 Text(
                                     text = "개인정보 처리방침",
                                     color = Color(0xFF3182CE),
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp,
+                                    fontSize = 12.sp,
                                     modifier = Modifier.clickable {
                                         val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-diary-cheomsak.onrender.com" }
                                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("${serverUrl.trim().removeSuffix("/")}/privacy"))
                                         context.startActivity(intent)
                                     }
                                 )
-                                Text(text = " 동의 (필수)", color = Color(0xFF718096), fontSize = 13.sp)
+                                Text(text = " 및 ", color = Color(0xFF718096), fontSize = 12.sp)
+                                Text(
+                                    text = "만 14세 미만 자녀 정보 수집·이용",
+                                    color = Color(0xFF3182CE),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.clickable {
+                                        val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-diary-cheomsak.onrender.com" }
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("${serverUrl.trim().removeSuffix("/")}/privacy"))
+                                        context.startActivity(intent)
+                                    }
+                                )
+                                Text(text = " 동의 (필수)", color = Color(0xFF718096), fontSize = 12.sp)
                             }
                         }
 

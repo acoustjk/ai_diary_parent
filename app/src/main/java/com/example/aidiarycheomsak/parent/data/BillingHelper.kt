@@ -74,15 +74,7 @@ class BillingHelper(
 
                 billingClient.launchBillingFlow(activity, flowParams)
             } else {
-                // Fallback simulation mode if Google Play Store is not set up (essential for local testing/dev)
-                scope.launch {
-                    val uid = auth.currentUser?.uid ?: ""
-                    if (uid.isNotEmpty()) {
-                        simulateMockBillingPurchase(productId, uid)
-                    } else {
-                        Toast.makeText(context, "로그인 후 결제가 가능합니다.", Toast.LENGTH_SHORT).show()
-                    }
-                }
+                Toast.makeText(context, "Google Play 결제 상품 정보를 불러올 수 없습니다. 다시 시도해 주세요.", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -166,29 +158,6 @@ class BillingHelper(
         }
     }
 
-    private suspend fun simulateMockBillingPurchase(productId: String, parentUid: String) {
-        Toast.makeText(context, "[시뮬레이션] Google Play가 로드되지 않아 가상 결제로 진행합니다.", Toast.LENGTH_SHORT).show()
-        val mockToken = "mock_google_token_" + System.currentTimeMillis()
-        try {
-            val verified = withContext(Dispatchers.IO) {
-                GeminiService.verifyGooglePlayPurchase(
-                    serverUrl = serverUrl,
-                    purchaseToken = mockToken,
-                    productId = productId,
-                    parentUid = parentUid,
-                    childId = currentChildId
-                )
-            }
-            if (verified) {
-                val creditsAdded = getCreditsForProduct(productId)
-                onPurchaseSuccess(productId, creditsAdded)
-            } else {
-                Toast.makeText(context, "가상 결제 검증에 실패했습니다.", Toast.LENGTH_SHORT).show()
-            }
-        } catch (e: Exception) {
-            Toast.makeText(context, "가상 결제 통신 실패: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     private fun getCreditsForProduct(productId: String): Int {
         return when (productId) {
