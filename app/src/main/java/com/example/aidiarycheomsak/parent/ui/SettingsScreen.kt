@@ -257,20 +257,6 @@ fun SettingsScreen(
                     HorizontalDivider(color = Color(0xFFE2E8F0))
 
                     Text(
-                        text = "🏠 AI고치 홈페이지 바로가기",
-                        color = Color(0xFF3182CE),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://ai-gochi.com"))
-                                context.startActivity(intent)
-                            }
-                            .padding(vertical = 8.dp)
-                    )
-
-                    Text(
                         text = "이용약관",
                         color = Color(0xFF3182CE),
                         fontWeight = FontWeight.SemiBold,

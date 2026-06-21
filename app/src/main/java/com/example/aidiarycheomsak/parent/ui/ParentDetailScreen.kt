@@ -67,6 +67,7 @@ fun ParentDetailScreen(
                             stamp = snapshot.getString("stamp") ?: "",
                             improved = snapshot.getBoolean("improved") ?: false,
                             timestamp = snapshot.getLong("timestamp") ?: 0L,
+                            typingSpeed = snapshot.getLong("wpm")?.toInt() ?: 0,
                             originalLength = snapshot.getLong("originalLength")?.toInt() ?: 0,
                             rewrittenLength = snapshot.getLong("rewrittenLength")?.toInt() ?: 0
                         )
@@ -285,6 +286,28 @@ fun ParentDetailScreen(
                             lineHeight = 22.sp
                         )
                     }
+                }
+            }
+
+            // AI Disclaimer Card
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF7FAFC)),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(text = "💡", fontSize = 16.sp)
+                    Text(
+                        text = "AI고치는 AI 기술로 일기를 분석하므로 완벽하지 않을 수 있습니다. 아이의 성장을 위해 최종적으로는 보호자님이 직접 첨삭해 주시는 것을 추천합니다.",
+                        fontSize = 11.sp,
+                        color = Color(0xFF718096),
+                        lineHeight = 16.sp
+                    )
                 }
             }
 

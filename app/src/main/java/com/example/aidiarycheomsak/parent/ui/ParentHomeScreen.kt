@@ -10,6 +10,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -43,6 +45,8 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
+import androidx.compose.ui.window.Popup
+import androidx.compose.material.icons.filled.Home
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -145,6 +149,14 @@ fun ParentHomeScreen(
                         }
                         childrenList = list
                         
+                        // Automatically re-subscribe to FCM topics for all paired children
+                        list.forEach { child ->
+                            val childId = child["childId"] as? String ?: ""
+                            if (childId.isNotEmpty()) {
+                                FirebaseMessaging.getInstance().subscribeToTopic("child_$childId")
+                            }
+                        }
+                        
                         // Default select first child if current selection is empty or not in the list
                         if (selectedChildId.isEmpty() && list.isNotEmpty()) {
                             selectedChildId = list[0]["childId"] as? String ?: ""
@@ -217,6 +229,59 @@ fun ParentHomeScreen(
                         Icon(imageVector = Icons.Default.Home, contentDescription = "홈페이지 바로가기")
                     }
                     if (reviewerName.isNotEmpty()) {
+                        var showTooltip by remember { mutableStateOf(true) }
+                        
+                        Box(contentAlignment = Alignment.Center) {
+                            IconButton(onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://ai-gochi.com"))
+                                context.startActivity(intent)
+                            }) {
+                                Icon(imageVector = Icons.Default.Home, contentDescription = "홈페이지 바로가기")
+                            }
+                            
+                            if (showTooltip) {
+                                Popup(
+                                    alignment = Alignment.BottomCenter,
+                                    onDismissRequest = { showTooltip = false }
+                                ) {
+                                    Card(
+                                        shape = RoundedCornerShape(8.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF3182CE)),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                        modifier = Modifier
+                                            .padding(top = 48.dp)
+                                            .width(180.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "홈페이지 설명서보기",
+                                                color = Color.White,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clickable {
+                                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://ai-gochi.com"))
+                                                        context.startActivity(intent)
+                                                        showTooltip = false
+                                                    }
+                                            )
+                                            IconButton(
+                                                onClick = { showTooltip = false },
+                                                modifier = Modifier.size(16.dp)
+                                            ) {
+                                                Text(text = "✕", color = Color.White, fontSize = 9.sp)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         IconButton(onClick = { showPairingDialog = true }) {
                             Icon(imageVector = Icons.Default.Add, contentDescription = "자녀 추가")
                         }
@@ -290,8 +355,10 @@ fun ParentHomeScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(32.dp),
-                        verticalArrangement = Arrangement.spacedBy(24.dp),
+                        modifier = Modifier
+                            .padding(24.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
