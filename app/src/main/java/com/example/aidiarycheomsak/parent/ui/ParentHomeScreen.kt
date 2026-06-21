@@ -94,7 +94,7 @@ fun ParentHomeScreen(
     var isPairingInProgress by remember { mutableStateOf(false) }
 
     val activity = remember(context) { context as? Activity }
-    val serverUrl = remember { preferenceHelper.serverUrl.ifBlank { "https://ai-diary-cheomsak.onrender.com" } }
+    val serverUrl = remember { preferenceHelper.serverUrl.ifBlank { "https://ai-gochi.com" } }
     val billingHelper = remember {
         BillingHelper(context, serverUrl) { productId, creditsAdded ->
             // Trigger UI reload or Firestore sync if needed. 
@@ -339,7 +339,7 @@ fun ParentHomeScreen(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
                                         modifier = Modifier.clickable {
-                                            val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-diary-cheomsak.onrender.com" }
+                                            val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-gochi.com" }
                                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse("${serverUrl.trim().removeSuffix("/")}/terms"))
                                             context.startActivity(intent)
                                         }
@@ -351,7 +351,7 @@ fun ParentHomeScreen(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
                                         modifier = Modifier.clickable {
-                                            val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-diary-cheomsak.onrender.com" }
+                                            val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-gochi.com" }
                                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse("${serverUrl.trim().removeSuffix("/")}/privacy"))
                                             context.startActivity(intent)
                                         }
@@ -368,8 +368,8 @@ fun ParentHomeScreen(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
                                         modifier = Modifier.clickable {
-                                            val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-diary-cheomsak.onrender.com" }
-                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("${serverUrl.trim().removeSuffix("/")}/privacy"))
+                                            val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-gochi.com" }
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("${serverUrl.trim().removeSuffix("/")}/child-privacy"))
                                             context.startActivity(intent)
                                         }
                                     )
@@ -387,7 +387,7 @@ fun ParentHomeScreen(
                             fontWeight = FontWeight.Normal,
                             modifier = Modifier
                                 .clickable {
-                                    val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-diary-cheomsak.onrender.com" }
+                                    val serverUrl = preferenceHelper.serverUrl.ifBlank { "https://ai-gochi.com" }
                                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("${serverUrl.trim().removeSuffix("/")}/licenses"))
                                     context.startActivity(intent)
                                 }
