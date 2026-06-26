@@ -161,10 +161,11 @@ class BillingHelper(
 
     private fun getCreditsForProduct(productId: String): Int {
         return when (productId) {
-            "magical_dew_1" -> 1
-            "magical_dew_10" -> 10
+            "magical_dew_7" -> 7
             "magical_dew_30" -> 30
-            "magical_dew_subscription" -> 100
+            "magical_dew_60" -> 60
+            "magical_dew_90" -> 90
+            "magical_dew_120" -> 120
             else -> 0
         }
     }

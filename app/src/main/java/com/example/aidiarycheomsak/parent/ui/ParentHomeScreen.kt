@@ -1114,29 +1114,30 @@ fun ParentHomeScreen(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     val products = listOf(
-                        Triple("magical_dew_1", "마법이슬 1개", "1,000원"),
-                        Triple("magical_dew_10", "마법이슬 10개", "9,900원"),
-                        Triple("magical_dew_30", "마법이슬 30개", "27,000원"),
-                        Triple("magical_dew_subscription", "정기 구독 (월 100개)", "39,000원 / 월")
+                        Triple("magical_dew_7", "마법이슬 7개", "1,000원"),
+                        Triple("magical_dew_30", "마법이슬 30개", "3,000원"),
+                        Triple("magical_dew_60", "마법이슬 60개", "5,500원"),
+                        Triple("magical_dew_90", "마법이슬 90개", "8,500원"),
+                        Triple("magical_dew_120", "마법이슬 120개", "10,000원")
                     )
 
                     products.forEach { (productId, productName, price) ->
-                        val isSub = productId == "magical_dew_subscription"
+                        val isBestValue = productId == "magical_dew_120"
                         
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = if (isSub) Color(0xFFFEF3C7) else Color(0xFFF3F4F6)
+                                containerColor = if (isBestValue) Color(0xFFFEF3C7) else Color(0xFFF3F4F6)
                             ),
                             border = BorderStroke(
                                 width = 1.dp,
-                                color = if (isSub) Color(0xFFF59E0B) else Color(0xFFD1D5DB)
+                                color = if (isBestValue) Color(0xFFF59E0B) else Color(0xFFD1D5DB)
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .clickable {
                                     if (activity != null) {
-                                        billingHelper.launchBillingFlow(activity, productId, isSub, selectedChildId)
+                                        billingHelper.launchBillingFlow(activity, productId, false, selectedChildId)
                                         showPurchaseDialog = false
                                     } else {
                                         Toast.makeText(context, "결제 창을 열 수 없습니다.", Toast.LENGTH_SHORT).show()
@@ -1155,22 +1156,23 @@ fun ParentHomeScreen(
                                         text = productName,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 15.sp,
-                                        color = if (isSub) Color(0xFFB45309) else Color(0xFF1F2937)
+                                        color = if (isBestValue) Color(0xFFB45309) else Color(0xFF1F2937)
                                     )
                                     Text(
-                                        text = if (isSub) "매달 마법이슬 100개 정기 충전" else "${productName.replace("마법이슬 ", "")} 즉시 충전",
+                                        text = if (isBestValue) "가장 넉넉한 혜택 패키지 즉시 충전" else "${productName.replace("마법이슬 ", "")} 즉시 충전",
                                         fontSize = 11.sp,
-                                        color = if (isSub) Color(0xFFD97706) else Color(0xFF6B7280)
+                                        color = if (isBestValue) Color(0xFFD97706) else Color(0xFF6B7280)
                                     )
                                 }
                                 Text(
                                     text = price,
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 15.sp,
-                                    color = if (isSub) Color(0xFFB45309) else Color(0xFF2563EB)
+                                    color = if (isBestValue) Color(0xFFB45309) else Color(0xFF2563EB)
                                 )
                             }
                         }
+                        Spacer(modifier = Modifier.height(10.dp))
                     }
                 }
             },
