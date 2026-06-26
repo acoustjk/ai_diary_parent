@@ -25,10 +25,15 @@ import com.example.aidiarycheomsak.parent.data.PreferenceHelper
 import com.example.aidiarycheomsak.parent.theme.AiDiaryCheomsakTheme
 import kotlinx.serialization.json.Json
 import com.google.firebase.auth.FirebaseAuth
+import com.google.android.gms.ads.MobileAds
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    
+    // Initialize Google AdMob SDK
+    MobileAds.initialize(this) {}
+    
     enableEdgeToEdge()
     
     // Request notification permission for Android 13+ (API 33+)

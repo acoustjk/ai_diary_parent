@@ -46,7 +46,10 @@ import com.google.firebase.firestore.SetOptions
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 import androidx.compose.ui.window.Popup
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.ui.viewinterop.AndroidView
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -222,11 +225,13 @@ fun ParentHomeScreen(
             TopAppBar(
                 title = { Text("👩‍👦 AI고치 보호자용 대시보드", fontWeight = FontWeight.Bold) },
                 actions = {
-                    IconButton(onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://ai-gochi.com"))
-                        context.startActivity(intent)
-                    }) {
-                        Icon(imageVector = Icons.Default.Home, contentDescription = "홈페이지 바로가기")
+                    if (reviewerName.isEmpty()) {
+                        IconButton(onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://ai-gochi.com"))
+                            context.startActivity(intent)
+                        }) {
+                            Icon(imageVector = Icons.Default.Home, contentDescription = "홈페이지 바로가기")
+                        }
                     }
                     if (reviewerName.isNotEmpty()) {
                         var showTooltip by remember { mutableStateOf(true) }
@@ -307,21 +312,7 @@ fun ParentHomeScreen(
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 6.dp, bottom = 6.dp)
                 )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .background(Color(0xFFE2E8F0))
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "📢 [광고] AI고치 추천 교재 및 도서 배너 광고",
-                        color = Color(0xFF4A5568),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                AdmobBanner()
             }
         },
         modifier = modifier
@@ -1191,4 +1182,20 @@ fun ParentHomeScreen(
             }
         )
     }
+}
+
+@Composable
+fun AdmobBanner(modifier: Modifier = Modifier) {
+    AndroidView(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(50.dp),
+        factory = { context ->
+            AdView(context).apply {
+                setAdSize(AdSize.BANNER)
+                adUnitId = "ca-app-pub-5254974097452914/8945949666"
+                loadAd(AdRequest.Builder().build())
+            }
+        }
+    )
 }

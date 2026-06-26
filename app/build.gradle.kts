@@ -99,4 +99,7 @@ dependencies {
 
   // Google Play Billing
   implementation(libs.android.billing)
+
+  // AdMob SDK
+  implementation(libs.google.play.services.ads)
 }

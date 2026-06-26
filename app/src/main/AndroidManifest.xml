@@ -19,6 +19,11 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="diary_notification_channel" />
 
+        <!-- Google AdMob Application ID -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-5254974097452914~8945949666" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -37,7 +42,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:host="oauth"
-                      android:scheme="kakao8455b01fa3249350b309e01a54d8c47b" />
+                      android:scheme="kakao6a6d42054298ea6c7b9d62bf919a148a" />
             </intent-filter>
         </activity>
     </application>

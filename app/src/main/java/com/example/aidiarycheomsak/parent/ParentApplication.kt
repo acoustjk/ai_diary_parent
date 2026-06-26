@@ -7,6 +7,6 @@ class ParentApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         // Initialize Kakao SDK with user's Native App Key
-        KakaoSdk.init(this, "8455b01fa3249350b309e01a54d8c47b")
+        KakaoSdk.init(this, "6a6d42054298ea6c7b9d62bf919a148a")
     }
 }
