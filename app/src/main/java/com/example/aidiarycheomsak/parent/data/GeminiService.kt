@@ -113,7 +113,7 @@ object GeminiService {
         purchaseToken: String,
         productId: String,
         parentUid: String,
-        packageName: String = "com.example.aidiarycheomsak.parent",
+        packageName: String = "com.aigochi.parent",
         childId: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
         val cleanUrl = serverUrl.trim().removeSuffix("/")

@@ -523,6 +523,57 @@ fun ParentHomeScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Button(
+                                onClick = {
+                                    isAuthLoading = true
+                                    auth.signInWithEmailAndPassword("tester@aigochi.com", "test1234")
+                                        .addOnSuccessListener { authResult ->
+                                            val user = authResult.user
+                                            if (user != null) {
+                                                val uid = user.uid
+                                                val reviewerData = mapOf(
+                                                    "name" to "구글심사관",
+                                                    "email" to "tester@aigochi.com",
+                                                    "updatedAt" to FieldValue.serverTimestamp()
+                                                )
+                                                db.collection("reviewers").document(uid)
+                                                    .set(reviewerData, SetOptions.merge())
+                                                    .addOnSuccessListener {
+                                                        preferenceHelper.reviewerName = "구글심사관"
+                                                        reviewerName = "구글심사관"
+                                                        isUserLoggedIn = true
+                                                        isAuthLoading = false
+                                                    }
+                                                    .addOnFailureListener {
+                                                        isAuthLoading = false
+                                                        Toast.makeText(context, "데이터 등록 실패", Toast.LENGTH_SHORT).show()
+                                                    }
+                                            }
+                                        }
+                                        .addOnFailureListener { e ->
+                                            isAuthLoading = false
+                                            Toast.makeText(context, "데모 로그인 실패: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                        }
+                                },
+                                enabled = !isAuthLoading,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF4A5568),
+                                    disabledContainerColor = Color(0xFFE2E8F0)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp)
+                            ) {
+                                Text(
+                                    text = "데모 계정으로 로그인 (구글 심사용)",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }

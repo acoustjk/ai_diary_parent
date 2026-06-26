@@ -9,7 +9,7 @@ android {
     namespace = "com.example.aidiarycheomsak.parent"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.example.aidiarycheomsak.parent"
+        applicationId = "com.aigochi.parent"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
