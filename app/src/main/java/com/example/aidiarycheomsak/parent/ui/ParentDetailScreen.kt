@@ -125,21 +125,7 @@ fun ParentDetailScreen(
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 6.dp, bottom = 6.dp)
                 )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .background(Color(0xFFE2E8F0))
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "📢 [광고] Google Mobile Ads (AdMob 배너)",
-                        color = Color(0xFF4A5568),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                AdmobBanner()
             }
         },
         modifier = modifier
