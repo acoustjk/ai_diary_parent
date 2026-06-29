@@ -997,7 +997,7 @@ fun ParentHomeScreen(
     if (showPairingDialog) {
         AlertDialog(
             onDismissRequest = { showPairingDialog = false },
-            title = { Text("새로운 자녀/교사 추가 연결", fontWeight = FontWeight.Bold) },
+            title = { Text("새로운 자녀 추가 연결", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("추가할 아이 스마트폰 화면의 6자리 인증 코드를 입력해주세요.")
